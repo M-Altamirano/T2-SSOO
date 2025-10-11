@@ -4,9 +4,10 @@
 #include <stdint.h>
 #include "../osm_File/osm_File.h"
 
+
 #define BITMAP_SIZE_BYTES (8192)
 
-uint8_t frame_bitmap[BITMAP_SIZE_BYTES] = {0};
+extern uint8_t frame_bitmap[BITMAP_SIZE_BYTES];
 
 #define SET_BIT(frame_bitmap, pos) ((frame_bitmap)[(pos)/8] |= (1 << ((pos)%8)))
 
@@ -39,7 +40,7 @@ typedef struct inverted_page_table_entry {
 
 /* ====== FUNCIONES GENERALES ====== */
 
-// void mount_memory(char* memory_path);
+void mount_memory(char** global_path, char* memory_path);
 
 // void list_processes();
 

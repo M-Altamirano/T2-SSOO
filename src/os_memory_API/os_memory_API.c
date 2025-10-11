@@ -4,9 +4,13 @@
 #include <stdbool.h> // bool, true, false
 #include "os_memory_API.h"
 
-char* path;
 
 // funciones generales
+
+void mount_memory(char** global_path, char* memory_path) {
+    *global_path = malloc(strlen(memory_path) + 1);
+    strcpy(*global_path, memory_path);
+}
 
 // // funciones procesos
 
