@@ -15,6 +15,7 @@ extern uint8_t frame_bitmap[BITMAP_SIZE_BYTES];
 
 #define CHECK_BIT(frame_bitmap, pos) ((frame_bitmap)[(pos)/8] & (1 << ((pos)%8)))
 
+
 typedef struct arch_entry{
     uint8_t valid;
     char name[14];
@@ -38,17 +39,26 @@ typedef struct inverted_page_table_entry {
     uint16_t VPN:12;
 } InvertedPageTableEntry;
 
+typedef struct memory {
+    ProcessEntry* processes[32];
+    InvertedPageTableEntry InvertedPageTable[65536];
+} Memory;
+
 /* ====== FUNCIONES GENERALES ====== */
+void list_processes(Memory* mem);
 
 void mount_memory(char** global_path, char* memory_path);
 
-// void list_processes();
 
-// int processes_slots();
+Memory* read_memory(char* global_path);
 
-// void list_files(int process_id);
+void list_processes(Memory* mem);
 
-// void frame_bitmap_status();
+int processes_slots(Memory* mem);
+
+void list_files(int process_id, Memory* mem);
+
+void frame_bitmap_status();
 
 
 

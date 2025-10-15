@@ -1,37 +1,49 @@
 #include <stdlib.h>
 #include "../os_memory_API/os_memory_API.h"
 
-
 uint8_t frame_bitmap[BITMAP_SIZE_BYTES] = {0};
+
 
 char* mem_path;
 
 int main(int argc, char const *argv[]) {
 
-  ProcessEntry** processes = calloc(32, sizeof(ProcessEntry)); 
   // montar la memoria
   mount_memory(&mem_path, (char *)argv[1]);
   
-  for (int i = 0; i < 32; i++) {
-    ProcessEntry* current_process = processes[i];
-    unsigned char PCB_buffer[16];
-    size_t process_bytes = fread(PCB_buffer, 1, sizeof(PCB_buffer), mem_path);
-    if (process_bytes != 16) {
-      printf("error reading process");
-      return 1;
-    }
-    current_process->state = PCB_buffer[0];
-    for (int j = 1; j < 15; j++) {
-      current_process->name[j-1] = PCB_buffer[j];
-    }
-    current_process->name[14] = '\0';
-    current_process->id = PCB_buffer[15];
-  }
+  Memory* sim_memory = read_memory(mem_path);
 
-  printf("size of arch entry: %zu\n", sizeof(ArchiveEntry));
-  printf("size of process entry: %zu\n", sizeof(ProcessEntry));
-  printf("size of IPT entry: %zu\n", sizeof(InvertedPageTableEntry));
-  printf("path: %s\n", mem_path);
+  list_processes(sim_memory);
+
+  printf("slots: %d\n", processes_slots(sim_memory));
+
+  list_files(198, sim_memory);
+
+  frame_bitmap_status();
+
+  // FILE* f = fopen("memfilled.bin", "rb");
+  // if (!f) {
+  //     perror("fopen");
+  //     return 1;
+  // }
+  
+  // FILE* out = fopen("output.txt", "w");
+
+  // for (int j = 0; j < 32; j++) {
+  //   unsigned char buffer[256];
+  //   size_t bytes_read = fread(buffer, 1, sizeof(buffer), f);
+
+
+  //   printf("Read %zu bytes:\n", bytes_read);
+  //   for (size_t i = 0; i < bytes_read; i++) {
+  //       fprintf(out, "%02X ", buffer[i]);  // print each byte in hex
+  //       if ((i + 1) % 16 == 0) fprintf(out, "\n"); // break every 16 bytes
+  //   }
+  //   fprintf(out, "\n");
+  // }
+  // fclose(f);
+  // fclose(out);
+
 
   free(mem_path);
 
