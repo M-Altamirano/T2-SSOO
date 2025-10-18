@@ -63,7 +63,7 @@ static FILE* open_mem_rbplus(void) {
 }
 
 static inline long pcb_entry_offset(int idx) {
-    return OFFSET_PCB + (long)idx * PCB_ENTRY_SIZE;
+    return OFFSET_PCB + (long)idx * PCB_ENTRY_SIZE_BYTES;
 }
 
 
@@ -293,7 +293,7 @@ void list_files(int process_id) {
     long arch_table_off = proc_off + 1 /*state*/ + 14 /*name*/ + 1 /*id*/;
 
 
-    for (int j = 0; j < ARCHIVE_ENTRIES_PER_PROC; j++) {
+    for (int j = 0; j < ARCHIVE_ENTRIES_PER_PROCESS; j++) {
         long entry_off = arch_table_off + (long)j * ARCHIVE_ENTRY_SIZE;
         if (fseek(f, entry_off, SEEK_SET) != 0) {
             perror("[os_memory_API] fseek(list_files:entry)");
@@ -424,7 +424,7 @@ static int write_new_pcb(FILE* f, int idx, int process_id, const char* process_n
     // Tabla de archivos: 10 entradas * 24 B, todo a 0
     unsigned char zeros[ARCHIVE_ENTRY_SIZE];
     memset(zeros, 0, sizeof(zeros));
-    for (int j = 0; j < ARCHIVE_ENTRIES_PER_PROC; j++) {
+    for (int j = 0; j < ARCHIVE_ENTRIES_PER_PROCESS; j++) {
         if (fwrite(zeros, 1, ARCHIVE_ENTRY_SIZE, f) != ARCHIVE_ENTRY_SIZE) return -1;
     }
     // Relleno hasta completar 256 B si hiciera falta (ya estamos exactamente en 256)
@@ -437,7 +437,7 @@ static int write_new_pcb(FILE* f, int idx, int process_id, const char* process_n
 static int zero_pcb(FILE* f, int idx) {
     long off = pcb_entry_offset(idx);
     if (fseek(f, off, SEEK_SET) != 0) return -1;
-    unsigned char zeros[PCB_ENTRY_SIZE];
+    unsigned char zeros[PCB_ENTRY_SIZE_BYTES];
     memset(zeros, 0, sizeof(zeros));
     if (fwrite(zeros, 1, sizeof(zeros), f) != sizeof(zeros)) return -1;
     return 0;
@@ -468,6 +468,41 @@ int start_process(int process_id, char* process_name) {
 }
 
 
+// libera todos los pfn pertenecientes a pid8 en IPT y bitma. Retorna la cantidad de frames liberados
+static int free_pid_frames(FILE* f, uint8_t pid8) {
+    // 1) Leer bitmap actual
+    if (fseek(f, OFFSET_BITMAP, SEEK_SET) != 0) return -1;
+    if (fread(frame_bitmap, 1, BITMAP_SIZE_BYTES, f) != BITMAP_SIZE_BYTES) return -1;
+
+    int freed = 0;
+
+    // 2) Recorrer IPT completa (65536 entradas x 3 bytes)
+    for (int pfn = 0; pfn < FRAMES_TOTAL; pfn++) {
+        uint8_t valid = 0;
+        uint16_t pid10 = 0, vpn13 = 0;
+        uint32_t raw = ipt_read_entry(f, pfn, &valid, &pid10, &vpn13);
+        // Si raw==0 y valid==0, ya está invalidado; sigue
+        if (!valid) continue;
+
+        // Comparar pid: IPT tiene 10 bits, nosotros usamos 8
+        uint8_t pid_entry = (uint8_t)(pid10 & 0xFF);
+        if (pid_entry == pid8) {
+            // invalidar IPT
+            ipt_invalidate_entry(f, pfn);
+            // limpiar bit en bitmap
+            CLEAR_BIT(frame_bitmap, pfn);
+            freed++;
+        }
+    }
+
+    // 3) Guardar bitmap
+    if (fseek(f, OFFSET_BITMAP, SEEK_SET) != 0) return -1;
+    if (fwrite(frame_bitmap, 1, BITMAP_SIZE_BYTES, f) != BITMAP_SIZE_BYTES) return -1;
+
+    return freed;
+}
+
+
 int finish_process(int process_id) {
     FILE* f = open_mem_rbplus();
     if (!f) return -1;
@@ -488,6 +523,7 @@ int finish_process(int process_id) {
     fclose(f);
     return 0;
 }
+
 
 
 
@@ -563,7 +599,7 @@ int file_table_slots(int process_id) {
     long arch_table_off = proc_off + 1 /*state*/ + 14 /*name*/ + 1 /*id*/;
 
     int free_slots = 0;
-    for (int j = 0; j < ARCHIVE_ENTRIES_PER_PROC; j++) {
+    for (int j = 0; j < ARCHIVE_ENTRIES_PER_PROCESS; j++) {
         long entry_off = arch_table_off + (long)j * ARCHIVE_ENTRY_SIZE;
         if (fseek(f, entry_off, SEEK_SET) != 0) { fclose(f); return -1; }
         uint8_t valid = 0;
