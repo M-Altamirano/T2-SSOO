@@ -15,7 +15,7 @@ int main(int argc, char** argv) {
     int libres = processes_slots();
     printf("PCB free slots: %d\n", libres);
     frame_bitmap_status();
-    // Ejemplo: listar archivos de PID 10 (ajústalo)
+    // Ejemplo: listar archivos de PID 10
     list_files(10);
 
     free(mem_path);
