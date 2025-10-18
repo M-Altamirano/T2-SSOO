@@ -4,20 +4,18 @@
 uint8_t frame_bitmap[BITMAP_SIZE_BYTES] = {0};
 
 
-char* mem_path;
-
 int main(int argc, char const *argv[]) {
 
   // montar la memoria
-  mount_memory(&mem_path, (char *)argv[1]);
+  mount_memory((char *)argv[1]);
   
   Memory* sim_memory = read_memory(mem_path);
 
-  list_processes(sim_memory);
+  list_processes();
 
-  printf("slots: %d\n", processes_slots(sim_memory));
+  printf("slots: %d\n", processes_slots());
 
-  list_files(198, sim_memory);
+  list_files(198);
 
   frame_bitmap_status();
 
