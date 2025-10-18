@@ -42,25 +42,25 @@ typedef struct inverted_page_table_entry {
 
 void mount_memory(char** global_path, char* memory_path);
 
-// void list_processes();
+void list_processes(void);
 
-// int processes_slots();
+int processes_slots(void);
 
-// void list_files(int process_id);
+void list_files(int process_id);
 
-// void frame_bitmap_status();
+void frame_bitmap_status(void);
 
 
 
 /* ====== FUNCIONES PARA PROCESOS ====== */
 
-// int start_process(int process_id, char* process_name);
+int start_process(int process_id, char* process_name);
 
-// int finish_process(int process_id);
+int finish_process(int process_id);
 
-// int clear_all_processes();
+int clear_all_processes();
 
-// int file_table_slots(int process_id);
+int file_table_slots(int process_id);
 
 
 /* ====== FUNCIONES PARA ARCHIVOS ====== */
